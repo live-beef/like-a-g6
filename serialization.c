@@ -14,18 +14,8 @@ void pack_short(unsigned char *buf, unsigned short num)
 
 void pack_long(unsigned char *buf, unsigned long num)
 {
-#ifndef _LP64
-	/* x86_32: long armazenado em 32 bits (4 bytes). */
-	/* Completar as posições mais significativas com 0. */
-	/* TODO: completar */
-
-	int i;
-
-	for (i = 0; i < 4; ++i)
-		*buf++ = 0x00;
-
-#endif
-
+#ifdef _LP64
+	/* x86_64: long armazenado em 64 bits. */
 	*buf++ = num >> 56;
 	*buf++ = num >> 48;
 	*buf++ = num >> 40;
@@ -34,6 +24,19 @@ void pack_long(unsigned char *buf, unsigned long num)
 	*buf++ = num >> 16;
 	*buf++ = num >> 8;
 	*buf = num;
+#else
+	/* x86_32: long armazenado em 32 bits (4 bytes). */
+	int i;
+
+	/* Completar com 0's para que o total seja de 64 bits. */
+	for (i = 0; i < 4; ++i)
+		*buf++ = 0x00;
+
+	*buf++ = num >> 24;
+	*buf++ = num >> 16;
+	*buf++ = num >> 8;
+	*buf = num;
+#endif
 }
 
 unsigned char unpack_char(unsigned char *buf)
@@ -48,17 +51,7 @@ unsigned short unpack_short(unsigned char *buf)
 
 unsigned long unpack_long(unsigned char *buf)
 {
-#ifndef _LP64
-	/* x86_32: long armazenado em 32 bits (4 bytes). */
-	/* Descartar as posições mais significativas (possuem 0). */
-	/* TODO: completar */
-
-	int i;
-
-	for (i = 0; i < 4; ++i)
-		*buf++;
-#endif
-
+#ifdef _LP64
 	return ((unsigned long) buf[0] << 56)
 			| ((unsigned long) buf[1] << 48)
 			| ((unsigned long) buf[2] << 40)
@@ -67,6 +60,20 @@ unsigned long unpack_long(unsigned char *buf)
 			| ((unsigned long) buf[5] << 16)
 			| ((unsigned long) buf[6] << 8)
 			| buf[7];
+#else
+	/* x86_32: long armazenado em 32 bits (4 bytes). */
+	/* Descartar as posições mais significativas (possuem 0). */
+
+	int i;
+
+	for (i = 0; i < 4; ++i)
+		*buf++;
+
+	return  ((unsigned long) buf[4] << 24)
+			| ((unsigned long) buf[5] << 16)
+			| ((unsigned long) buf[6] << 8)
+			| buf[7];
+#endif
 }
 
 
